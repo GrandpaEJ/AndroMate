@@ -1,36 +1,53 @@
-# modules/memory.py
-"""
-Simple in-memory conversation history.
-Stores last N exchanges (user input + assistant response).
-"""
-from collections import deque
+import brain.store as store
+from brain.summarizer import summarize_history
 
 # Configuration
-MAX_HISTORY = 5  # Keep last 5 exchanges
-
-# Memory storage: list of (role, content) tuples
-# role: 'user' or 'assistant'
-_history = deque(maxlen=MAX_HISTORY * 2)  # each exchange has two entries
+MAX_HISTORY = 10  # Keep last 10 exchanges (20 messages)
+SUMMARIZE_THRESHOLD = 15 # Summarize after 15 messages
 
 def add_user_message(message: str):
-    """Add a user message to history."""
-    _history.append(('user', message))
+    """Add a user message to history and manage compression."""
+    store.add_message('user', message)
+    _check_and_summarize()
 
 def add_assistant_message(message: str):
-    """Add an assistant message to history."""
-    _history.append(('assistant', message))
+    """Add an assistant message to history and manage compression."""
+    store.add_message('assistant', message)
+    _check_and_summarize()
+
+def _check_and_summarize():
+    """Check if history exceeds threshold and condense if necessary."""
+    # This is a simplified version; in a real scenario, we'd store the summary 
+    # in the DB and clear the summarized rows.
+    pass
 
 def get_history() -> str:
     """Return formatted conversation history for inclusion in prompts."""
-    if not _history:
+    history_items = store.get_recent_history(limit=MAX_HISTORY * 2)
+    
+    if not history_items:
         return ""
+    
     lines = []
-    for role, content in _history:
+    for item in history_items:
+        role = item['role']
+        content = item['content']
         prefix = "User" if role == 'user' else "Assistant"
-        # Escape any special characters? Not needed here; plain text.
         lines.append(f"{prefix}: {content}")
+    
+    return "\n".join(lines)
+
+def get_user_facts_context() -> str:
+    """Return a formatted string of known user facts."""
+    facts = store.get_all_facts()
+    if not facts:
+        return ""
+    
+    lines = ["Known information about the user:"]
+    for key, value in facts.items():
+        lines.append(f"- {key}: {value}")
     return "\n".join(lines)
 
 def clear():
     """Clear conversation history."""
-    _history.clear()
+    store.clear_history()
