@@ -1,644 +1,349 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AndroMate · AI Assistant</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>AndroMate | Intelligence</title>
+
+    <!-- Premium Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#10b981', // Emerald
+                        secondary: '#6366f1', // Indigo
+                        dark: {
+                            50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1',
+                            400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155',
+                            800: '#1e293b', 900: '#0f172a', 950: '#020617'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Manrope', 'Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer components {
+            .chat-container {
+                @apply flex-1 overflow-y-auto px-4 md:px-10 py-6 space-y-8 scroll-smooth;
+            }
+            .bubble-assistant {
+                @apply relative max-w-[85%] md:max-w-[70%] bg-dark-800 border border-white/[0.05] p-5 rounded-[2rem] rounded-tl-none shadow-xl text-slate-200 transition-all duration-300;
+            }
+            .bubble-user {
+                @apply relative max-w-[85%] md:max-w-[70%] bg-gradient-to-tr from-primary to-emerald-600 p-5 rounded-[2rem] rounded-tr-none shadow-lg shadow-primary/20 text-white transition-all duration-300;
+            }
+            .sidebar-card {
+                @apply bg-dark-900/40 backdrop-blur-3xl border border-white/[0.05] rounded-[2.5rem] p-6 shadow-2xl;
+            }
+            .action-icon {
+                @apply w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:bg-primary/20 hover:border-primary/20 transition-all duration-200;
+            }
+        }
+
+        /* Message Tails */
+        .bubble-assistant::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -12px;
+            width: 20px;
+            height: 20px;
+            background: #1e293b;
+            clip-path: polygon(100% 0, 0 0, 100% 100%);
+            border-left: 1px solid rgba(255,255,255,0.05);
+            z-index: -1;
+        }
+        .bubble-user::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: -10px;
+            width: 20px;
+            height: 20px;
+            background: #10b981;
+            clip-path: polygon(0 0, 100% 0, 0 100%);
+            z-index: -1;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { @apply bg-white/10 rounded-full; }
+        ::-webkit-scrollbar-thumb:hover { @apply bg-primary/40; }
+    </style>
 </head>
-<body>
-    <div class="chat-card">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="logo-area">
-                <div class="logo-icon"><i class="fas fa-robot"></i></div>
-                <div class="logo-text">
-                    <h2>AndroMate</h2>
-                    <p>local · private · fast</p>
+
+<body class="bg-dark-950 text-slate-200 h-screen overflow-hidden flex flex-col md:flex-row font-sans">
+
+    <!-- Mobile Header -->
+    <header
+        class="md:hidden flex items-center justify-between px-6 py-4 bg-dark-950/80 backdrop-blur-xl border-b border-white/5 z-[100]">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
+                <i class="fas fa-robot text-white"></i>
+            </div>
+            <h1 class="font-bold text-lg tracking-tight">AndroMate</h1>
+        </div>
+        <button onclick="toggleSidebar()" class="action-icon">
+            <i class="fas fa-bars-staggered"></i>
+        </button>
+    </header>
+
+    <!-- Sidebar -->
+    <aside id="sidebar"
+        class="fixed inset-y-0 left-0 w-80 z-[110] transform -translate-x-full md:translate-x-0 md:relative md:flex flex-col p-4 gap-4 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] bg-dark-950/95 md:bg-transparent">
+        <div class="sidebar-card flex flex-col h-full overflow-hidden">
+            <!-- Brand -->
+            <div class="flex flex-col items-center text-center gap-4 mb-10">
+                <div
+                    class="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center shadow-2xl shadow-primary/40 group cursor-pointer">
+                    <i class="fas fa-robot text-4xl text-white group-hover:scale-110 transition-transform"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-tight text-white">AndroMate</h1>
+                    <p class="text-[10px] font-black text-primary uppercase tracking-[0.3em] mt-1">AI Intelligence</p>
                 </div>
             </div>
-            <div class="status-panel">
-                <div class="status-item">
-                    <div class="status-icon"><i class="fas fa-bolt"></i></div>
-                    <div class="status-info">
-                        <div class="status-label">Battery</div>
-                        <div class="status-value" id="batteryValue"><small>—</small></div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 space-y-2 overflow-y-auto custom-scrollbar">
+                <button onclick="switchTab('chat')" id="navChat"
+                    class="w-full flex items-center gap-4 px-5 py-4 rounded-2xl bg-primary/10 border border-primary/20 text-primary group">
+                    <i class="fas fa-message"></i>
+                    <span class="font-bold text-sm">Chat</span>
+                </button>
+                <button onclick="switchTab('actions')" id="navActions"
+                    class="w-full flex items-center gap-4 px-5 py-4 rounded-2xl hover:bg-white/5 text-slate-400 hover:text-white transition-all">
+                    <i class="fas fa-bolt"></i>
+                    <span class="font-bold text-sm">Quick Actions</span>
+                </button>
+                <button onclick="switchTab('contacts')" id="navContacts"
+                    class="w-full flex items-center gap-4 px-5 py-4 rounded-2xl hover:bg-white/5 text-slate-400 hover:text-white transition-all">
+                    <i class="fas fa-address-book"></i>
+                    <span class="font-bold text-sm">Contacts</span>
+                </button>
+                <button onclick="toggleSettings()"
+                    class="w-full flex items-center gap-4 px-5 py-4 rounded-2xl hover:bg-white/5 text-slate-400 hover:text-white transition-all">
+                    <i class="fas fa-sliders"></i>
+                    <span class="font-bold text-sm">Settings</span>
+                </button>
+            </nav>
+
+            <!-- Status -->
+            <div class="mt-10 p-5 bg-white/5 rounded-[2rem] border border-white/5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-bolt text-primary text-xs"></i>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Power</span>
                     </div>
+                    <span id="batteryValue" class="text-xs font-bold text-white">--%</span>
                 </div>
-                <div class="status-item">
-                    <div class="status-icon"><i class="fas fa-wifi"></i></div>
-                    <div class="status-info">
-                        <div class="status-label">WiFi</div>
-                        <div class="status-value" id="wifiValue">—</div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-wifi text-secondary text-xs"></i>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">WiFi</span>
+                    </div>
+                    <span id="wifiValue" class="text-xs font-bold text-white truncate max-w-[80px]">Scanning</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-memory text-purple-400 text-xs"></i>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Memory</span>
+                    </div>
+                    <span id="memoryValue" class="text-xs font-bold text-white">-- MB</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-hard-drive text-amber-400 text-xs"></i>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Storage</span>
+                    </div>
+                    <span id="storageValue" class="text-xs font-bold text-white">--</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-signal text-pink-400 text-xs"></i>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Network</span>
+                    </div>
+                    <span id="networkValue" class="text-xs font-bold text-white">--</span>
+                </div>
+            </div>
+
+            <!-- AI Provider -->
+            <div class="mt-4 p-4 bg-white/5 rounded-[2rem] border border-white/5">
+                <div class="flex items-center gap-3 mb-3">
+                    <i class="fas fa-robot text-primary text-xs"></i>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">AI Provider</span>
+                </div>
+                <select id="providerSelect" onchange="changeProvider()"
+                    class="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white outline-none focus:border-primary/50">
+                    <option value="pollinations">Pollinations</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="openrouter">OpenRouter</option>
+                </select>
+            </div>
+
+            <!-- Mobile Close -->
+            <button onclick="toggleSidebar()" class="md:hidden absolute top-6 right-6 action-icon">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Overlay -->
+    <div id="sidebarOverlay" onclick="toggleSidebar()"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[105] hidden opacity-0 transition-opacity duration-500">
+    </div>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex flex-col min-w-0 md:p-4">
+        <div
+            class="flex-1 flex flex-col bg-dark-900/40 md:rounded-[3rem] border border-white/[0.05] relative overflow-hidden shadow-2xl">
+
+            <!-- Header -->
+            <header class="px-8 py-5 flex items-center justify-between border-b border-white/[0.05] bg-dark-950/20">
+                <div class="flex items-center gap-4">
+                    <div class="relative w-3 h-3">
+                        <div class="absolute inset-0 bg-primary rounded-full animate-ping opacity-30"></div>
+                        <div class="relative bg-primary w-3 h-3 rounded-full shadow-[0_0_10px_#10b981]"></div>
+                    </div>
+                    <h2 class="font-bold text-white tracking-tight hidden sm:block">Neural Link Active</h2>
+                    <span class="sm:hidden font-bold text-white text-sm">Online</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleSearch()" class="action-icon"><i class="fas fa-search text-xs"></i></button>
+                    <button onclick="toggleTheme()" class="action-icon"><i id="themeIcon"
+                            class="fas fa-moon text-xs"></i></button>
+                    <div class="w-px h-6 bg-white/5 mx-2"></div>
+                    <button onclick="clearChat()"
+                        class="action-icon text-red-400/60 hover:text-red-400 hover:bg-red-500/10"><i
+                            class="fas fa-trash-can text-xs"></i></button>
+                </div>
+            </header>
+
+            <!-- Search -->
+            <div id="searchBar" class="absolute top-20 inset-x-8 z-50 hidden transition-all duration-300">
+                <div class="bg-dark-800 border border-white/10 rounded-2xl p-4 flex items-center gap-4 shadow-2xl">
+                    <i class="fas fa-magnifying-glass text-slate-500"></i>
+                    <input type="text" id="searchInput" placeholder="Search neural patterns..."
+                        class="bg-transparent border-none outline-none flex-1 text-white" oninput="searchMessages()">
+                    <button onclick="toggleSearch()"
+                        class="text-xs font-bold text-slate-500 hover:text-white">ESC</button>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div id="chat" class="chat-container custom-scrollbar">
+                <!-- Injected via JS -->
+            </div>
+
+            <!-- Quick Actions Panel -->
+            <div id="quickActions" class="chat-container custom-scrollbar hidden">
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4">
+                    <!-- Actions loaded via JS -->
+                </div>
+            </div>
+
+            <!-- Contacts Panel -->
+            <div id="contactsPanel" class="chat-container custom-scrollbar hidden">
+                <div class="mb-6">
+                    <input type="text" id="contactSearch" placeholder="Search contacts..."
+                        class="w-full bg-dark-800 border border-white/10 rounded-2xl px-5 py-4 text-white text-sm font-medium outline-none focus:border-primary/50"
+                        oninput="filterContacts()">
+                </div>
+                <div id="contactsList" class="space-y-3">
+                    <!-- Contacts loaded via JS -->
+                </div>
+            </div>
+
+            <!-- Control Bar -->
+            <div class="px-6 pb-6 md:px-10 md:pb-10 pt-4">
+                <div class="relative group">
+                    <div
+                        class="absolute -inset-1 bg-gradient-to-r from-primary to-secondary rounded-[2.5rem] blur opacity-10 group-focus-within:opacity-30 transition-opacity duration-500">
+                    </div>
+                    <div
+                        class="relative bg-dark-950 border border-white/[0.08] rounded-[2.5rem] p-2 flex items-center gap-2 shadow-2xl">
+                        <button
+                            class="w-12 h-12 flex items-center justify-center text-slate-500 hover:text-primary transition-colors">
+                            <i class="fas fa-plus text-lg"></i>
+                        </button>
+                        <input type="text" id="command" placeholder="Enter neural directive..."
+                            class="flex-1 bg-transparent border-none outline-none px-4 py-4 text-white text-lg placeholder-slate-700 font-medium"
+                            autofocus>
+                        <button id="sendBtn"
+                            class="w-14 h-14 bg-gradient-to-tr from-primary to-emerald-600 rounded-full flex items-center justify-center text-white shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+                            <i class="fas fa-paper-plane text-xl"></i>
+                        </button>
                     </div>
                 </div>
             </div>
-            <div class="tip-box">
-                <i class="fas fa-lightbulb"></i>
-                <p><strong>Try:</strong> "battery level", "open YouTube", "take a selfie", "send email", "generate image"</p>
+        </div>
+    </main>
+
+    <!-- Settings -->
+    <div id="settingsPanel"
+        class="fixed inset-y-0 right-0 w-full sm:w-96 bg-dark-900 border-l border-white/5 z-[120] translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-2xl p-10 flex flex-col">
+        <div class="flex items-center justify-between mb-12">
+            <h3 class="text-2xl font-black text-white italic">CONFIG_CORE</h3>
+            <button onclick="toggleSettings()" class="action-icon"><i class="fas fa-xmark"></i></button>
+        </div>
+
+        <div class="space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+            <div class="p-6 bg-white/5 rounded-3xl border border-white/5 space-y-4">
+                <label class="flex items-center justify-between cursor-pointer group">
+                    <span class="text-sm font-bold group-hover:text-white transition-colors">Light Theme</span>
+                    <div class="switch"><input type="checkbox" id="lightThemeToggle"
+                            onchange="toggleTheme()"><span class="slider"></span></div>
+                </label>
+                <label class="flex items-center justify-between cursor-pointer group">
+                    <span class="text-sm font-bold group-hover:text-white transition-colors">Auto Neural Scroll</span>
+                    <div class="switch"><input type="checkbox" id="autoScrollToggle" checked
+                            onchange="saveSettings()"><span class="slider"></span></div>
+                </label>
+                <label class="flex items-center justify-between cursor-pointer group">
+                    <span class="text-sm font-bold group-hover:text-white transition-colors">Persistent Memory</span>
+                    <div class="switch"><input type="checkbox" id="saveHistoryToggle" checked
+                            onchange="saveSettings()"><span class="slider"></span></div>
+                </label>
+                <label class="flex items-center justify-between cursor-pointer group">
+                    <span class="text-sm font-bold group-hover:text-white transition-colors">Direct Link
+                        Execution</span>
+                    <div class="switch"><input type="checkbox" id="enterKeyToggle" checked
+                            onchange="saveSettings()"><span class="slider"></span></div>
+                </label>
             </div>
         </div>
 
-        <!-- Main chat -->
-        <div class="main-chat">
-            <div class="chat-header">
-                <div class="chat-header-left">
-                    <i class="fas fa-comment-dots" style="color: var(--accent-primary);"></i>
-                    <h3>Conversation</h3>
-                    <span class="status-dot" title="Online"></span>
-                </div>
-                <div class="chat-header-actions">
-                    <button class="header-btn" onclick="toggleSearch()" title="Search messages"><i class="fas fa-search"></i></button>
-                    <button class="header-btn" onclick="exportChat()" title="Export chat"><i class="fas fa-download"></i></button>
-                    <button class="header-btn" onclick="toggleTheme()" title="Toggle theme"><i class="fas fa-moon" id="themeIcon"></i></button>
-                    <button class="header-btn" onclick="clearChat()" title="Clear chat"><i class="fas fa-trash"></i></button>
-                    <button class="header-btn" onclick="toggleSettings()" title="Settings"><i class="fas fa-cog"></i></button>
-                </div>
-            </div>
-
-            <!-- Search bar -->
-            <div class="search-bar" id="searchBar" style="display: none;">
-                <input type="text" id="searchInput" placeholder="Search messages..." onkeyup="searchMessages()">
-                <button onclick="toggleSearch()"><i class="fas fa-times"></i></button>
-            </div>
-
-            <!-- Messages container -->
-            <div class="messages-container" id="chat">
-                <!-- Messages inserted via JS -->
-            </div>
-
-            <!-- Settings panel -->
-            <div class="settings-panel" id="settingsPanel">
-                <div class="settings-header">
-                    <h4>Settings</h4>
-                    <button onclick="toggleSettings()"><i class="fas fa-times"></i></button>
-                </div>
-                <div class="settings-content">
-                    <div class="setting-item">
-                        <label>Auto-scroll to new messages</label>
-                        <label class="toggle">
-                            <input type="checkbox" id="autoScrollToggle" checked onchange="saveSettings()">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <label>Save chat history</label>
-                        <label class="toggle">
-                            <input type="checkbox" id="saveHistoryToggle" checked onchange="saveSettings()">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <label>Enter key sends message</label>
-                        <label class="toggle">
-                            <input type="checkbox" id="enterKeyToggle" checked onchange="saveSettings()">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-actions">
-                        <button onclick="importChat()" class="settings-btn"><i class="fas fa-upload"></i> Import Chat</button>
-                        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleImport(event)">
-                    </div>
-                </div>
-            </div>
-
-            <div class="input-area">
-                <div class="input-wrapper">
-                    <input type="text" id="command" placeholder="Type a message..." autofocus>
-                    <button class="attach-btn" title="Attach file"><i class="fas fa-paperclip"></i></button>
-                    <button id="sendBtn"><i class="fas fa-arrow-up"></i></button>
-                </div>
-            </div>
+        <div class="mt-auto space-y-4 pt-10">
+            <button onclick="exportChat()"
+                class="w-full py-4 rounded-2xl bg-primary text-white font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">Export
+                Matrix</button>
+            <button onclick="importChat()"
+                class="w-full py-4 rounded-2xl bg-white/5 text-slate-400 font-bold hover:text-white hover:bg-white/10 transition-all border border-white/5">Restore
+                Snapshot</button>
+            <input type="file" id="importFile" accept=".json" class="hidden" onchange="handleImport(event)">
         </div>
     </div>
 
-    <!-- Toast notification -->
-    <div class="toast" id="toast"></div>
+    <div id="toast" class="toast"></div>
 
-    <script>
-        const chat = document.getElementById('chat');
-        const commandInput = document.getElementById('command');
-        const sendBtn = document.getElementById('sendBtn');
-        const batterySpan = document.getElementById('batteryValue');
-        const wifiSpan = document.getElementById('wifiValue');
-        const themeIcon = document.getElementById('themeIcon');
-        let isTyping = false;
-        let messageHistory = [];
-        let autoScroll = true;
-        let saveHistory = true;
-        let enterKeyEnabled = true;
-        let isDarkTheme = true;
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            loadSettings();
-            loadChatHistory();
-            applyTheme();
-        });
-
-        // Load settings from localStorage
-        function loadSettings() {
-            const settings = JSON.parse(localStorage.getItem('andromate_settings') || '{}');
-            autoScroll = settings.autoScroll !== false;
-            saveHistory = settings.saveHistory !== false;
-            enterKeyEnabled = settings.enterKey !== false;
-            isDarkTheme = settings.darkTheme !== false;
-
-            document.getElementById('autoScrollToggle').checked = autoScroll;
-            document.getElementById('saveHistoryToggle').checked = saveHistory;
-            document.getElementById('enterKeyToggle').checked = enterKeyEnabled;
-        }
-
-        // Save settings to localStorage
-        function saveSettings() {
-            autoScroll = document.getElementById('autoScrollToggle').checked;
-            saveHistory = document.getElementById('saveHistoryToggle').checked;
-            enterKeyEnabled = document.getElementById('enterKeyToggle').checked;
-
-            localStorage.setItem('andromate_settings', JSON.stringify({
-                autoScroll,
-                saveHistory,
-                enterKey: enterKeyEnabled,
-                darkTheme: isDarkTheme
-            }));
-        }
-
-        // Toggle theme
-        function toggleTheme() {
-            isDarkTheme = !isDarkTheme;
-            themeIcon.className = isDarkTheme ? 'fas fa-moon' : 'fas fa-sun';
-            document.body.classList.toggle('light-theme', !isDarkTheme);
-            saveSettings();
-        }
-
-        // Apply theme
-        function applyTheme() {
-            themeIcon.className = isDarkTheme ? 'fas fa-moon' : 'fas fa-sun';
-            document.body.classList.toggle('light-theme', !isDarkTheme);
-        }
-
-        // Toggle settings panel
-        function toggleSettings() {
-            const panel = document.getElementById('settingsPanel');
-            panel.classList.toggle('open');
-        }
-
-        // Toggle search
-        function toggleSearch() {
-            const searchBar = document.getElementById('searchBar');
-            searchBar.style.display = searchBar.style.display === 'none' ? 'flex' : 'none';
-            if (searchBar.style.display === 'flex') {
-                document.getElementById('searchInput').focus();
-            }
-        }
-
-        // Search messages
-        function searchMessages() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            const messages = chat.querySelectorAll('.message-row');
-
-            messages.forEach(msg => {
-                const text = msg.querySelector('.bubble').textContent.toLowerCase();
-                if (query === '' || text.includes(query)) {
-                    msg.style.display = 'flex';
-                } else {
-                    msg.style.display = 'none';
-                }
-            });
-        }
-
-        // Show toast notification
-        function showToast(message, type = 'info') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = `toast ${type} show`;
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        }
-
-        // Add message to chat
-        function addMessage(sender, text, isError = false, saveToHistory = true) {
-            const row = document.createElement('div');
-            row.className = `message-row ${sender}`;
-            row.dataset.timestamp = Date.now();
-
-            const avatar = document.createElement('div');
-            avatar.className = `avatar ${sender}`;
-            avatar.innerHTML = sender === 'assistant' ? '<i class="fas fa-robot"></i>' : '<i class="fas fa-user"></i>';
-
-            const bubble = document.createElement('div');
-            bubble.className = `bubble ${sender}${isError ? ' error' : ''}`;
-
-            // Add message actions
-            const actions = document.createElement('div');
-            actions.className = 'message-actions';
-            actions.innerHTML = `
-                <button class="action-btn" onclick="copyMessage(this)" title="Copy"><i class="fas fa-copy"></i></button>
-                <button class="action-btn" onclick="editMessage(this)" title="Edit"><i class="fas fa-edit"></i></button>
-                <button class="action-btn" onclick="deleteMessage(this)" title="Delete"><i class="fas fa-trash"></i></button>
-            `;
-            bubble.appendChild(actions);
-
-            // Parse markdown with code block support
-            const parsedContent = parseMarkdown(text);
-            bubble.appendChild(parsedContent);
-
-            const time = document.createElement('div');
-            time.className = 'timestamp';
-            time.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            bubble.appendChild(time);
-
-            if (sender === 'assistant') {
-                row.appendChild(avatar);
-                row.appendChild(bubble);
-            } else {
-                row.appendChild(bubble);
-                row.appendChild(avatar);
-            }
-            chat.appendChild(row);
-
-            if (autoScroll) {
-                chat.scrollTop = chat.scrollHeight;
-            }
-
-            // Save to history
-            if (saveHistory && saveToHistory) {
-                messageHistory.push({ sender, text, isError, timestamp: Date.now() });
-                localStorage.setItem('andromate_history', JSON.stringify(messageHistory));
-            }
-
-            return row;
-        }
-
-        // Copy message text
-        function copyMessage(btn) {
-            const bubble = btn.closest('.bubble');
-            const markdownContent = bubble.querySelector('.markdown-content');
-            const text = markdownContent ? markdownContent.textContent : bubble.textContent;
-            // Remove timestamp and actions from text
-            const cleanText = text.replace(/[\u200b]/g, '').trim();
-
-            navigator.clipboard.writeText(cleanText).then(() => {
-                showToast('Message copied!', 'success');
-            }).catch(err => {
-                showToast('Failed to copy', 'error');
-            });
-        }
-
-        // Edit message (resend)
-        function editMessage(btn) {
-            const bubble = btn.closest('.bubble');
-            const markdownContent = bubble.querySelector('.markdown-content');
-            const text = markdownContent ? markdownContent.textContent : bubble.textContent;
-            const cleanText = text.replace(/[\u200b]/g, '').trim();
-
-            commandInput.value = cleanText;
-            commandInput.focus();
-
-            // Delete the original message
-            deleteMessage(btn);
-        }
-
-        // Delete message
-        function deleteMessage(btn) {
-            const row = btn.closest('.message-row');
-
-            // Remove from history
-            const timestamp = parseInt(row.dataset.timestamp);
-            const index = messageHistory.findIndex(m => m.timestamp === timestamp);
-            if (index !== -1) {
-                messageHistory.splice(index, 1);
-                localStorage.setItem('andromate_history', JSON.stringify(messageHistory));
-            }
-
-            row.remove();
-            showToast('Message deleted', 'info');
-        }
-
-        // Parse markdown text into DOM nodes
-        function parseMarkdown(text) {
-            const container = document.createElement('div');
-            container.className = 'markdown-content';
-
-            // Split by code blocks first
-            const parts = text.split(/(```[\s\S]*?```)/g);
-
-            parts.forEach(part => {
-                if (part.startsWith('```') && part.endsWith('```')) {
-                    const codeBlock = createCodeBlock(part);
-                    container.appendChild(codeBlock);
-                } else {
-                    const textBlock = parseInlineMarkdown(part);
-                    if (textBlock.childNodes.length > 0) {
-                        container.appendChild(textBlock);
-                    }
-                }
-            });
-
-            return container;
-        }
-
-        // Create code block element with copy button
-        function createCodeBlock(codeText) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'code-block-wrapper';
-
-            const match = codeText.match(/^```(\w*)\n([\s\S]*?)```$/);
-            const language = match && match[1] ? match[1] : 'code';
-            const code = match && match[2] ? match[2].trim() : codeText.replace(/^```|```$/g, '').trim();
-
-            const header = document.createElement('div');
-            header.className = 'code-block-header';
-
-            const langSpan = document.createElement('span');
-            langSpan.className = 'code-language';
-            langSpan.textContent = language;
-            header.appendChild(langSpan);
-
-            const copyBtn = document.createElement('button');
-            copyBtn.className = 'copy-code-btn';
-            copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy code';
-            copyBtn.onclick = () => copyCode(code, copyBtn);
-            header.appendChild(copyBtn);
-
-            const pre = document.createElement('pre');
-            const codeEl = document.createElement('code');
-            codeEl.className = `language-${language}`;
-            codeEl.textContent = code;
-            pre.appendChild(codeEl);
-
-            wrapper.appendChild(header);
-            wrapper.appendChild(pre);
-
-            return wrapper;
-        }
-
-        // Copy code to clipboard
-        function copyCode(code, btn) {
-            navigator.clipboard.writeText(code).then(() => {
-                const originalHTML = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                btn.classList.add('copied');
-                showToast('Code copied!', 'success');
-                setTimeout(() => {
-                    btn.innerHTML = originalHTML;
-                    btn.classList.remove('copied');
-                }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy:', err);
-                btn.innerHTML = '<i class="fas fa-times"></i> Failed';
-                setTimeout(() => {
-                    btn.innerHTML = '<i class="fas fa-copy"></i> Copy code';
-                }, 2000);
-            });
-        }
-
-        // Parse inline markdown
-        function parseInlineMarkdown(text) {
-            const container = document.createElement('div');
-            if (!text.trim()) return container;
-
-            let html = text
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
-                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-                .replace(/\n/g, '<br>');
-
-            container.innerHTML = html;
-            return container;
-        }
-
-        // Add image message
-        function addImageMessage(imageUrl) {
-            const row = document.createElement('div');
-            row.className = 'message-row assistant';
-            row.dataset.timestamp = Date.now();
-
-            const avatar = document.createElement('div');
-            avatar.className = 'avatar assistant';
-            avatar.innerHTML = '<i class="fas fa-robot"></i>';
-
-            const bubble = document.createElement('div');
-            bubble.className = 'bubble assistant';
-
-            const img = document.createElement('img');
-            img.src = imageUrl;
-            img.style.maxWidth = '100%';
-            img.style.borderRadius = '12px';
-            img.style.marginBottom = '8px';
-            img.onerror = () => {
-                bubble.innerHTML += '<br><small style="color:var(--error)">Image failed to load</small>';
-            };
-            bubble.appendChild(img);
-
-            const time = document.createElement('div');
-            time.className = 'timestamp';
-            time.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            bubble.appendChild(time);
-
-            row.appendChild(avatar);
-            row.appendChild(bubble);
-            chat.appendChild(row);
-
-            if (autoScroll) {
-                chat.scrollTop = chat.scrollHeight;
-            }
-        }
-
-        // Show typing indicator
-        function showTyping() {
-            if (isTyping) return;
-            isTyping = true;
-
-            const row = document.createElement('div');
-            row.className = 'message-row assistant';
-            row.id = 'typingIndicator';
-
-            const avatar = document.createElement('div');
-            avatar.className = 'avatar assistant';
-            avatar.innerHTML = '<i class="fas fa-robot"></i>';
-
-            const indicator = document.createElement('div');
-            indicator.className = 'typing-indicator';
-            indicator.innerHTML = '<span></span><span></span><span></span>';
-
-            row.appendChild(avatar);
-            row.appendChild(indicator);
-            chat.appendChild(row);
-            if (autoScroll) {
-                chat.scrollTop = chat.scrollHeight;
-            }
-        }
-
-        // Remove typing indicator
-        function hideTyping() {
-            const indicator = document.getElementById('typingIndicator');
-            if (indicator) indicator.remove();
-            isTyping = false;
-        }
-
-        // Clear chat
-        function clearChat() {
-            if (confirm('Are you sure you want to clear the chat history?')) {
-                chat.innerHTML = '';
-                messageHistory = [];
-                if (saveHistory) {
-                    localStorage.setItem('andromate_history', JSON.stringify(messageHistory));
-                }
-                addMessage('assistant', 'Chat cleared. How can I help you?', false, false);
-                showToast('Chat cleared', 'info');
-            }
-        }
-
-        // Load chat history from localStorage
-        function loadChatHistory() {
-            if (!saveHistory) return;
-
-            const saved = localStorage.getItem('andromate_history');
-            if (saved) {
-                try {
-                    messageHistory = JSON.parse(saved);
-                    messageHistory.forEach(msg => {
-                        addMessage(msg.sender, msg.text, msg.isError, false);
-                    });
-                } catch (e) {
-                    console.error('Failed to load history:', e);
-                }
-            }
-
-            if (messageHistory.length === 0) {
-                addMessage('assistant', 'Hello! I\'m **AndroMate**. How can I assist you today?', false, false);
-            }
-        }
-
-        // Export chat as JSON
-        function exportChat() {
-            const data = {
-                exportDate: new Date().toISOString(),
-                messages: messageHistory
-            };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `andromate-chat-${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            showToast('Chat exported!', 'success');
-        }
-
-        // Import chat
-        function importChat() {
-            document.getElementById('importFile').click();
-        }
-
-        // Handle import file
-        function handleImport(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (data.messages && Array.isArray(data.messages)) {
-                        chat.innerHTML = '';
-                        messageHistory = [];
-                        data.messages.forEach(msg => {
-                            addMessage(msg.sender, msg.text, msg.isError, true);
-                        });
-                        localStorage.setItem('andromate_history', JSON.stringify(messageHistory));
-                        showToast('Chat imported!', 'success');
-                    } else {
-                        showToast('Invalid chat file', 'error');
-                    }
-                } catch (err) {
-                    showToast('Failed to import chat', 'error');
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = '';
-        }
-
-        // Send command
-        async function sendCommand() {
-            const cmd = commandInput.value.trim();
-            if (!cmd) return;
-
-            addMessage('user', cmd);
-            commandInput.value = '';
-            commandInput.disabled = true;
-            sendBtn.disabled = true;
-            showTyping();
-
-            try {
-                const response = await fetch('/api/command', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command: cmd })
-                });
-                const data = await response.json();
-
-                hideTyping();
-
-                if (data.error) {
-                    addMessage('assistant', `Error: ${data.error}`, true);
-                } else {
-                    if (data.image) {
-                        addImageMessage(data.image);
-                    }
-                    const output = data.output.trim();
-                    if (output) {
-                        addMessage('assistant', output);
-                    } else if (!data.image) {
-                        addMessage('assistant', 'Done.');
-                    }
-                }
-            } catch (e) {
-                hideTyping();
-                addMessage('assistant', `Network error: ${e.message}`, true);
-            } finally {
-                commandInput.disabled = false;
-                sendBtn.disabled = false;
-                commandInput.focus();
-            }
-        }
-
-        // Update status
-        async function updateStatus() {
-            try {
-                const response = await fetch('/api/status');
-                const data = await response.json();
-
-                if (data.battery !== undefined && data.battery !== 'unknown') {
-                    batterySpan.innerHTML = `${data.battery}%`;
-                } else {
-                    batterySpan.innerHTML = '<small>—</small>';
-                }
-
-                if (data.wifi && data.wifi !== 'unknown' && data.wifi !== 'error') {
-                    wifiSpan.innerText = data.wifi;
-                } else {
-                    wifiSpan.innerText = 'Not connected';
-                }
-            } catch (e) {
-                batterySpan.innerHTML = '<small>—</small>';
-                wifiSpan.innerText = '—';
-            }
-        }
-
-        sendBtn.addEventListener('click', sendCommand);
-        commandInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && enterKeyEnabled) sendCommand();
-        });
-
-        updateStatus();
-        setInterval(updateStatus, 30000);
-    </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
+
 </html>
