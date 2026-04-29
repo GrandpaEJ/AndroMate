@@ -1,9 +1,20 @@
-# modules/telegram_bot.py
+import os
+import sys
+
+# Ensure sibling modules can be imported when run directly or via -m
+if __package__ is None or __package__ == "":
+    # Run directly
+    sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+else:
+    # Run as -m modules.telegram_bot
+    parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    modules_dir = os.path.join(parent_dir, "modules")
+    if modules_dir not in sys.path:
+        sys.path.insert(0, modules_dir)
+
 import telebot
 import logging
 import io
-import sys
-import os
 import config
 from ai import ask_ai
 from actions import execute_action, get_battery, get_location, get_wifi_info, scan_wifi, toggle_torch, set_brightness, set_volume, take_photo, open_app, show_toast, run_shell, list_contacts, get_call_log, get_sms_inbox, get_device_info, list_providers, set_provider

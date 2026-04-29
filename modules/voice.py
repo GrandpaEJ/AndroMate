@@ -1,4 +1,17 @@
-# voice.py
+import os
+import sys
+
+# Ensure sibling modules can be imported when run directly or via -m
+if __package__ is None or __package__ == "":
+    # Run directly
+    sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+else:
+    # Run as -m modules.voice
+    parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    modules_dir = os.path.join(parent_dir, "modules")
+    if modules_dir not in sys.path:
+        sys.path.insert(0, modules_dir)
+
 import subprocess
 from datetime import datetime
 from ai import ask_ai
