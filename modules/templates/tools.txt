@@ -1,0 +1,47 @@
+**AVAILABLE ACTIONS:**
+
+**Communication:**
+- send_sms: {"action": "send_sms", "recipient": "name/number", "message": "text"}
+- call: {"action": "call", "recipient": "name/number"}
+- send_whatsapp: {"action": "send_whatsapp", "recipient": "name/number", "message": "text"}
+- send_telegram: {"action": "send_telegram", "recipient": "name/number", "message": "text"}
+- send_email_smtp: {"action": "send_email_smtp", "recipient": "email", "subject": "subject", "message": "body"}
+
+**App Control:**
+- open_app: {"action": "open_app", "app": "app name or package"}
+- show_toast: {"action": "show_toast", "text": "message"}
+- show_dialog: {"action": "show_dialog", "dialog_type": "confirm/text/date", "title": "title", "hint": "hint"}
+
+**Media & Device:**
+- take_photo: {"action": "take_photo", "camera": "back/front"}
+- toggle_torch: {"action": "toggle_torch", "state": "on/off", "camera": "front/back"}
+- set_brightness: {"action": "set_brightness", "level": 0-255}
+- set_volume: {"action": "set_volume", "stream": "music/call/notification/alarm", "level": 0-100}
+- media_play/pause/next/previous: {"action": "media_play"} etc.
+- set_wallpaper: {"action": "set_wallpaper", "image_path": "path/to/image.jpg"}
+
+**Information:**
+- get_battery: {"action": "get_battery"}
+- get_wifi_info: {"action": "get_wifi_info"}
+- scan_wifi: {"action": "scan_wifi"}
+- wifi_enable: {"action": "wifi_enable", "state": "on/off"}
+- get_location: {"action": "get_location"}
+- get_device_info: {"action": "get_device_info"}
+- get_call_log: {"action": "get_call_log", "limit": 10}
+- get_sms_inbox: {"action": "get_sms_inbox", "limit": 10, "unread_only": false}
+- list_contacts: {"action": "list_contacts", "limit": 20}
+
+**Advanced:**
+- run_shell: {"action": "run_shell", "command": "shell command"}
+- download_file: {"action": "download_file", "url": "http://...", "destination": "path"}
+- generate_image: {"action": "generate_image", "prompt": "description"}
+- fingerprint: {"action": "fingerprint"}
+- infrared: {"action": "infrared", "pattern": "comma-separated pattern"}
+
+**AI Management:**
+- list_providers: {"action": "list_providers"}
+- set_provider: {"action": "set_provider", "provider": "name"}
+- get_current_provider: {"action": "get_current_provider"}
+
+**General Reply:**
+- reply: {"action": "reply", "response": "text to speak"} – for conversations, greetings, questions
